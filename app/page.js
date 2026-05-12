@@ -195,9 +195,10 @@ export default function App() {
     setError(""); setAnalyzing(true);
     try {
       const prompt = `You are a real estate investment analyst. Analyze this property and return ONLY valid JSON with no markdown or explanation.\n\nProperty:\n- Address: ${form.address}\n- Price: $${form.price}\n- Beds: ${form.beds} | Baths: ${form.baths} | Sqft: ${form.sqft}\n- Monthly HOA: $${form.hoa || 0}\n- Annual Taxes: $${form.taxes || 0}\n- Annual Insurance: $${form.insurance || 0}\n- Notes: ${form.notes || "None"}\n\nReturn this exact JSON:\n{\n  "shortTermMonthly": <number>,\n  "shortTermOccupancy": <number 0-100>,\n  "longTermMonthly": <number>,\n  "estimatedMortgage": <number based on 7.5% 30yr fixed with 20% down>,\n  "strViability": "<High|Medium|Low>",\n  "neighborhood": "<1 sentence market context>",\n  "summary": "<2-3 sentence investment analysis with pros and cons>"\n}`;
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
       });
       const apiData = await res.json();
       const text = apiData.content.map(i => i.text || "").join("");
