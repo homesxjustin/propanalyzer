@@ -204,9 +204,11 @@ export default function App() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
       const apiData = await res.json();
-      if (!apiData.content) throw new Error(JSON.stringify(apiData));
-      const text = apiData.content.map(i => i.text || "").join("");
-      const analysis = JSON.parse(text.replace(/```json|```/g, "").trim());
+      if (!apiData.content) throw new Error("No content in response: " + JSON.stringify(apiData).slice(0, 200));
+      const text = apiData.content.map(i => i.text || "").join("").replace(/```json|```/g, "").trim();
+      let analysis;
+      try { analysis = JSON.parse(text); }
+      catch(parseErr) { throw new Error("JSON parse failed. Raw: " + text.slice(0, 200)); }
       const { data: saved, error: dbErr } = await sb.from("properties").insert({
         list_id: activeListId, user_id: user.id, address: form.address, price: parseFloat(form.price),
         beds: parseFloat(form.beds), baths: parseFloat(form.baths), sqft: parseFloat(form.sqft),
@@ -216,7 +218,7 @@ export default function App() {
       if (dbErr) throw new Error(dbErr.message);
       setLists(l => l.map(x => x.id === activeListId ? { ...x, properties: [...x.properties, saved] } : x));
       setForm(blankForm); showToast("Property analyzed & saved ✓");
-    } catch (e) { setError("Analysis failed: " + e.message); }
+    } catch (e) { setError("Analysis failed: " + (e.message || JSON.stringify(e))); }
     setAnalyzing(false);
   };
 
