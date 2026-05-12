@@ -199,7 +199,12 @@ export default function App() {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
       const apiData = await res.json();
+      if (!apiData.content) throw new Error(JSON.stringify(apiData));
       const text = apiData.content.map(i => i.text || "").join("");
       const analysis = JSON.parse(text.replace(/```json|```/g, "").trim());
       const { data: saved, error: dbErr } = await sb.from("properties").insert({
@@ -211,7 +216,7 @@ export default function App() {
       if (dbErr) throw new Error(dbErr.message);
       setLists(l => l.map(x => x.id === activeListId ? { ...x, properties: [...x.properties, saved] } : x));
       setForm(blankForm); showToast("Property analyzed & saved ✓");
-    } catch (e) { setError("Analysis failed — please try again."); }
+    } catch (e) { setError("Analysis failed: " + e.message); }
     setAnalyzing(false);
   };
 
