@@ -2,6 +2,10 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return Response.json({ error: "Missing API key" }, { status: 500 });
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -15,6 +19,12 @@ export async function POST(request) {
         messages: body.messages,
       }),
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Anthropic error:", response.status, err);
+      return Response.json({ error: err }, { status: response.status });
+    }
 
     const data = await response.json();
     return Response.json(data);
