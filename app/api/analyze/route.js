@@ -1,16 +1,17 @@
 export async function POST(request) {
   try {
     const body = await request.json();
+    const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return Response.json({ error: "Missing API key" }, { status: 500 });
+    if (!apiKey) {
+      return Response.json({ error: "ANTHROPIC_API_KEY is not set" }, { status: 500 });
     }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -20,16 +21,13 @@ export async function POST(request) {
       }),
     });
 
+    const text = await response.text();
     if (!response.ok) {
-      const err = await response.text();
-      console.error("Anthropic error:", response.status, err);
-      return Response.json({ error: err }, { status: response.status });
+      return Response.json({ error: text }, { status: response.status });
     }
 
-    const data = await response.json();
-    return Response.json(data);
+    return Response.json(JSON.parse(text));
   } catch (error) {
-    console.error("Route error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
